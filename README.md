@@ -89,38 +89,33 @@ python -m whisper_dictation.daemon
 **Enter development environment:**
 ```bash
 cd ~/whisper-dictation
-devenv shell  # Or use direnv if configured
+nix develop  # Or use direnv if configured
 ```
 
 **Start the dictation daemon** (choose one option):
 
-**Option A: Auto-detect language** (most convenient):
+**Option A: Using just recipes** (recommended):
 ```bash
-run-daemon-auto      # Detects Italian, English, Spanish, etc.
-# Note: Adds ~1-2s processing time for detection
+just run             # Use config file settings
+just run-auto        # Auto-detect language
+just run-en          # English only
+just run-fast        # Use base model (faster)
+just run-verbose     # With debug output
 ```
 
-**Option B: Choose specific language** (fastest):
-```bash
-run-daemon-en        # English only
-run-daemon-it        # Italian only (Italiano)
-run-daemon           # Use config file language
-```
-
-**Option C: Command-line flags** (temporary override):
+**Option B: Command-line flags** (temporary override):
 ```bash
 python -m whisper_dictation.daemon --verbose --language auto  # Auto-detect
 python -m whisper_dictation.daemon --verbose --language en
-python -m whisper_dictation.daemon --verbose --language it
-python -m whisper_dictation.daemon --verbose --model base  # Override model too
+python -m whisper_dictation.daemon --verbose --model base  # Override model
 ```
 
-**Option D: Edit config file** (persistent setting):
+**Option C: Edit config file** (persistent setting):
 ```bash
 vim ~/.config/whisper-dictation/config.yaml
 # Change: language: auto  (or en, it, es, fr, etc.)
 # Change: model: base     (or tiny, small, medium, large)
-run-daemon
+just run
 ```
 
 ### Using Dictation
@@ -134,7 +129,7 @@ run-daemon
 - Speak naturally, no need to pause between words
 - Works in any application (Wayland-compatible)
 - Auto-detect mode handles mixed Italian/English seamlessly
-- Use `run-daemon-debug` to troubleshoot hotkey detection
+- Use `just run-verbose` to troubleshoot hotkey detection
 
 ## Configuration
 
@@ -172,10 +167,6 @@ sed -i 's/language: .*/language: auto/' ~/.config/whisper-dictation/config.yaml
 
 # Change model to base (faster)
 sed -i 's/model: .*/model: base/' ~/.config/whisper-dictation/config.yaml
-
-# Or use convenience scripts
-dictate-en    # Sets language to en
-dictate-it    # Sets language to it
 ```
 
 ## How It Works
@@ -286,17 +277,16 @@ gnome-control-center keyboard
 # If you see "has_mods=False", verify Super key is being detected
 ```
 
-### DevEnv issues
+### Nix environment issues
 ```bash
 # Rebuild environment
-devenv shell
+nix develop
 
 # If packages missing, update
 nix flake update
 
-# Clear cache
-rm -rf .devenv/
-devenv shell
+# Clear nix cache and rebuild
+nix develop --refresh
 ```
 
 ## Development
@@ -307,31 +297,52 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for comprehensive development guide.
 
 ```bash
 # Enter dev shell
-devenv shell
+nix develop
 
-# Run tests with coverage
-test
+# Show all available commands
+just
+
+# Run the daemon
+just run
+
+# Run tests
+just test
 
 # Format code
-format
+just format
 
-# Check all quality gates
-quality-check
+# Check all quality gates (lint + test)
+just check
 
-# Build package
-nix build
+# Test dictation without keyboard (records 5 seconds)
+just test-dictation
+
+# Check setup status
+just status
+
+# Build nix package
+just build
 ```
 
-### Available Scripts
+### Available Recipes
 
-- `run-daemon-auto` - Auto-detect language (most convenient)
-- `run-daemon-en` - English only (fastest)
-- `run-daemon-it` - Italian only
-- `run-daemon-debug` - Debug mode (shows all key events)
-- `test` - Run test suite with coverage
-- `format` - Auto-format code (Black + Ruff)
-- `quality-check` - Run all quality gates
-- `setup-dev` - First-time setup (git hooks, Cursor AI rules)
+Run `just` to see all available commands:
+
+- `just run` - Run daemon with default settings
+- `just run-verbose` - Run with verbose output
+- `just run-auto` - Run with auto language detection
+- `just run-en` - Run with English
+- `just run-fast` - Run with base model (faster)
+- `just test` - Run test suite
+- `just test-cov` - Run tests with coverage
+- `just format` - Auto-format code (Black + Ruff)
+- `just lint` - Check code style
+- `just check` - Run all quality checks
+- `just test-dictation` - Test recording/transcription
+- `just download-model-base` - Download base model (~142MB)
+- `just download-model-medium` - Download medium model (~1.5GB)
+- `just start-ydotool` - Start ydotool daemon
+- `just status` - Show setup status
 
 ## Comparison to Other Tools
 

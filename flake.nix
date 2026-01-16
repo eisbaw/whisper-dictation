@@ -93,6 +93,7 @@
             pkgs.gobject-introspection
 
             # Development tools
+            pkgs.just
             python.pkgs.pytest
             python.pkgs.black
             python.pkgs.ruff
