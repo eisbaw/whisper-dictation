@@ -101,6 +101,7 @@
           shellHook = ''
             echo "🎤 Whisper Dictation Development Environment"
             echo "Run: python -m whisper_dictation.daemon"
+            export PYTHONPATH="$PWD/src:$PYTHONPATH"
             export GI_TYPELIB_PATH="${pkgs.gtk4}/lib/girepository-1.0:${pkgs.gobject-introspection}/lib/girepository-1.0"
           '';
         };
