@@ -56,7 +56,7 @@
                 pkgs.ydotool
                 pkgs.libnotify
               ]} \
-              --prefix GI_TYPELIB_PATH : "${pkgs.gtk4}/lib/girepository-1.0:${pkgs.gobject-introspection}/lib/girepository-1.0"
+              --prefix GI_TYPELIB_PATH : "${pkgs.gtk4}/lib/girepository-1.0:${pkgs.glib.out}/lib/girepository-1.0:${pkgs.graphene}/lib/girepository-1.0:${pkgs.pango.out}/lib/girepository-1.0:${pkgs.harfbuzz}/lib/girepository-1.0:${pkgs.gdk-pixbuf}/lib/girepository-1.0:${pkgs.cairo}/lib/girepository-1.0:${pkgs.gobject-introspection}/lib/girepository-1.0"
 
             # Copy systemd service
             mkdir -p $out/lib/systemd/user
@@ -102,7 +102,7 @@
             echo "🎤 Whisper Dictation Development Environment"
             echo "Run: python -m whisper_dictation.daemon"
             export PYTHONPATH="$PWD/src:$PYTHONPATH"
-            export GI_TYPELIB_PATH="${pkgs.gtk4}/lib/girepository-1.0:${pkgs.gobject-introspection}/lib/girepository-1.0"
+            export GI_TYPELIB_PATH="${pkgs.gtk4}/lib/girepository-1.0:${pkgs.glib.out}/lib/girepository-1.0:${pkgs.graphene}/lib/girepository-1.0:${pkgs.pango.out}/lib/girepository-1.0:${pkgs.harfbuzz}/lib/girepository-1.0:${pkgs.gdk-pixbuf}/lib/girepository-1.0:${pkgs.cairo}/lib/girepository-1.0:${pkgs.gobject-introspection}/lib/girepository-1.0"
           '';
         };
       }
