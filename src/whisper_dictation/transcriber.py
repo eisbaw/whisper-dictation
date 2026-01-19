@@ -118,6 +118,9 @@ class WhisperTranscriber:
             text = re.sub(r"\b(um|uh|like|you know)\b", "", text, flags=re.IGNORECASE)
             text = re.sub(r"\s+", " ", text).strip()
 
+        # Replace "enter" at end of text with newline (with optional punctuation)
+        text = re.sub(r"\benter[.!]?\s*$", "\n", text, flags=re.IGNORECASE)
+
         # Auto-capitalize first letter if configured
         if self.config.get("processing.auto_capitalize", True) and text:
             text = text[0].upper() + text[1:]
