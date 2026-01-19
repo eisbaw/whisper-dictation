@@ -34,7 +34,7 @@ MIN_SPEECH_CHUNKS = MIN_SPEECH_MS // CHUNK_MS
 MAX_SPEECH_CHUNKS = MAX_SPEECH_MS // CHUNK_MS
 
 # Hotword configuration
-HOTWORDS = ["hey whisper", "okay whisper", "whisper", "hey computer", "computer"]
+HOTWORDS = ["attention computer"]
 
 # Whisper configuration
 TINY_MODEL = Path.home() / ".local/share/whisper-models/ggml-tiny.bin"
