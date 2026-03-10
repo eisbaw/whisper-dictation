@@ -38,7 +38,19 @@ class Config:
         "space": ecodes.KEY_SPACE,
         "slash": ecodes.KEY_SLASH,
         "semicolon": ecodes.KEY_SEMICOLON,
-        # Add more as needed
+        "altgr": ecodes.KEY_RIGHTALT,
+        "f1": ecodes.KEY_F1,
+        "f2": ecodes.KEY_F2,
+        "f3": ecodes.KEY_F3,
+        "f4": ecodes.KEY_F4,
+        "f5": ecodes.KEY_F5,
+        "f6": ecodes.KEY_F6,
+        "f7": ecodes.KEY_F7,
+        "f8": ecodes.KEY_F8,
+        "f9": ecodes.KEY_F9,
+        "f10": ecodes.KEY_F10,
+        "f11": ecodes.KEY_F11,
+        "f12": ecodes.KEY_F12,
     }
 
     def __init__(self, config_path: Path = None):
