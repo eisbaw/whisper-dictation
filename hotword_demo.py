@@ -4,14 +4,20 @@ Hotword detection demo using Silero VAD + tiny Whisper.
 
 Listens continuously for a hotword, then activates for full transcription.
 Uses minimal resources: VAD for always-on listening, tiny model with 1 thread.
+
+Usage:
+    python hotword_demo.py          # Normal mode
+    python hotword_demo.py --gui    # Live scrolling ASCII plot
 """
 
+import argparse
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import wave
+from collections import deque
 from pathlib import Path
 
 import numpy as np
@@ -118,7 +124,98 @@ def check_hotword(text: str) -> str | None:
     return None
 
 
+class AsciiPlot:
+    """Live scrolling ASCII plot for VAD visualization"""
+
+    def __init__(self, width: int = 80, height: int = 15):
+        self.width = width
+        self.height = height
+        self.history = deque(maxlen=width)
+        self.events = deque(maxlen=width)  # Track events at each position
+        self.last_event = ""
+
+    def add(self, value: float, event: str = ""):
+        """Add a value (0-1) to the plot"""
+        self.history.append(value)
+        self.events.append(event)
+        if event:
+            self.last_event = event
+
+    def render(self, mode: str = "HOT", is_speech: bool = False) -> str:
+        """Render the plot as ASCII art"""
+        lines = []
+
+        # Header
+        status = "▶ SPEECH" if is_speech else "  silence"
+        mode_color = "CMD" if mode == "CMD" else "HOT"
+        lines.append(f"┌{'─' * (self.width + 2)}┐ [{mode_color}] {status}")
+
+        # Plot area
+        for row in range(self.height - 1, -1, -1):
+            threshold_row = int(THRESHOLD * (self.height - 1))
+            row_char = "│"
+
+            cells = []
+            for i, val in enumerate(self.history):
+                val_row = int(val * (self.height - 1))
+                event = self.events[i] if i < len(self.events) else ""
+
+                if val_row >= row:
+                    if event == "hotword":
+                        cells.append("█")  # Hotword detected
+                    elif event == "command":
+                        cells.append("▓")  # Command
+                    elif val >= THRESHOLD:
+                        cells.append("▓")  # Speech
+                    else:
+                        cells.append("░")  # Below threshold but has value
+                elif row == threshold_row:
+                    cells.append("·")  # Threshold line
+                else:
+                    cells.append(" ")
+
+            # Pad if not enough history
+            while len(cells) < self.width:
+                cells.insert(0, "·" if int(THRESHOLD * (self.height - 1)) == row else " ")
+
+            # Row label
+            if row == self.height - 1:
+                label = "1.0"
+            elif row == threshold_row:
+                label = f"{THRESHOLD:.1f}"
+            elif row == 0:
+                label = "0.0"
+            else:
+                label = "   "
+
+            lines.append(f"{row_char}{''.join(cells)}{row_char} {label}")
+
+        # Footer with scale
+        lines.append(f"└{'─' * (self.width + 2)}┘")
+
+        # Last event
+        if self.last_event:
+            lines.append(f"  Last: {self.last_event}")
+
+        return "\n".join(lines)
+
+    def clear_screen(self):
+        """Clear screen and move cursor to top"""
+        print("\033[2J\033[H", end="")
+
+    def draw(self, mode: str = "HOT", is_speech: bool = False):
+        """Clear and redraw the plot"""
+        self.clear_screen()
+        print(self.render(mode, is_speech))
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Hotword detection demo")
+    parser.add_argument("--gui", action="store_true", help="Show live scrolling ASCII plot")
+    parser.add_argument("--width", type=int, default=80, help="Plot width (default: 80)")
+    parser.add_argument("--height", type=int, default=12, help="Plot height (default: 12)")
+    args = parser.parse_args()
+
     print("Loading Silero VAD model...", file=sys.stderr)
     vad_model = load_silero_vad()
     vad_model.eval()
@@ -127,15 +224,19 @@ def main():
         print(f"Error: Tiny model not found at {TINY_MODEL}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Hotword detection demo", file=sys.stderr)
-    print(f"  Hotwords: {', '.join(HOTWORDS)}", file=sys.stderr)
-    print(f"  VAD threshold: {THRESHOLD}", file=sys.stderr)
-    print(f"  Max hotword duration: {MAX_SPEECH_MS}ms", file=sys.stderr)
-    print(f"  Whisper threads: 1 (minimal CPU)", file=sys.stderr)
-    print(f"  Tiny model: {TINY_MODEL.name}", file=sys.stderr)
-    print("", file=sys.stderr)
-    print("Listening for hotword... (Ctrl+C to stop)", file=sys.stderr)
-    print("=" * 50, file=sys.stderr)
+    # Create plot if GUI mode
+    plot = AsciiPlot(width=args.width, height=args.height) if args.gui else None
+
+    if not args.gui:
+        print(f"Hotword detection demo", file=sys.stderr)
+        print(f"  Hotwords: {', '.join(HOTWORDS)}", file=sys.stderr)
+        print(f"  VAD threshold: {THRESHOLD}", file=sys.stderr)
+        print(f"  Max hotword duration: {MAX_SPEECH_MS}ms", file=sys.stderr)
+        print(f"  Whisper threads: 1 (minimal CPU)", file=sys.stderr)
+        print(f"  Tiny model: {TINY_MODEL.name}", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("Listening for hotword... (Ctrl+C to stop)", file=sys.stderr)
+        print("=" * 50, file=sys.stderr)
 
     # State
     in_speech = False
@@ -156,7 +257,8 @@ def main():
         save_wav(audio_data, audio_file)
 
         duration = len(audio_data) / SAMPLE_RATE
-        print(f"\n[Checking {duration:.1f}s audio for hotword...]", file=sys.stderr)
+        if not plot:
+            print(f"\n[Checking {duration:.1f}s audio for hotword...]", file=sys.stderr)
 
         start = time.time()
         text = transcribe(audio_file, TINY_MODEL, threads=1)
@@ -165,20 +267,29 @@ def main():
         audio_file.unlink(missing_ok=True)
 
         if text:
-            print(f"[Heard: \"{text}\"] ({elapsed:.2f}s)", file=sys.stderr)
+            if plot:
+                plot.last_event = f'Heard: "{text}" ({elapsed:.2f}s)'
+            else:
+                print(f"[Heard: \"{text}\"] ({elapsed:.2f}s)", file=sys.stderr)
+
             hotword = check_hotword(text)
             if hotword:
-                print(f"\n*** HOTWORD DETECTED: \"{hotword}\" ***", file=sys.stderr)
-                print("Listening for command...", file=sys.stderr)
+                if plot:
+                    plot.last_event = f'*** HOTWORD: "{hotword}" *** Listening for command...'
+                else:
+                    print(f"\n*** HOTWORD DETECTED: \"{hotword}\" ***", file=sys.stderr)
+                    print("Listening for command...", file=sys.stderr)
                 activated = True
                 activation_audio = []
-                # Notify
                 subprocess.run(
                     ["notify-send", "-t", "2000", "Hotword Detected", f"Listening for command..."],
                     capture_output=True,
                 )
         else:
-            print(f"[No speech detected] ({elapsed:.2f}s)", file=sys.stderr)
+            if plot:
+                plot.last_event = f"No speech detected ({elapsed:.2f}s)"
+            else:
+                print(f"[No speech detected] ({elapsed:.2f}s)", file=sys.stderr)
 
     def process_command(audio_data: np.ndarray):
         """Process command after hotword activation"""
@@ -188,7 +299,8 @@ def main():
         save_wav(audio_data, audio_file)
 
         duration = len(audio_data) / SAMPLE_RATE
-        print(f"\n[Transcribing {duration:.1f}s command with base model...]", file=sys.stderr)
+        if not plot:
+            print(f"\n[Transcribing {duration:.1f}s command with base model...]", file=sys.stderr)
 
         start = time.time()
         text = transcribe(audio_file, BASE_MODEL, threads=4)
@@ -197,22 +309,29 @@ def main():
         audio_file.unlink(missing_ok=True)
 
         if text:
-            print(f"\n>>> COMMAND: {text} ({elapsed:.2f}s)", flush=True)
+            if plot:
+                plot.last_event = f'COMMAND: "{text}" ({elapsed:.2f}s)'
+            else:
+                print(f"\n>>> COMMAND: {text} ({elapsed:.2f}s)", flush=True)
             subprocess.run(
                 ["notify-send", "-t", "5000", "Command", text],
                 capture_output=True,
             )
         else:
-            print(f"[No command detected]", file=sys.stderr)
+            if plot:
+                plot.last_event = f"No command detected ({elapsed:.2f}s)"
+            else:
+                print(f"[No command detected]", file=sys.stderr)
 
         activated = False
-        print("\nListening for hotword...", file=sys.stderr)
+        if not plot:
+            print("\nListening for hotword...", file=sys.stderr)
 
     def audio_callback(indata, frames, time_info, status):
         nonlocal in_speech, silence_chunks, speech_chunks, segment_audio
         nonlocal activated, activation_audio
 
-        if status:
+        if status and not plot:
             print(f"Audio status: {status}", file=sys.stderr)
 
         audio = indata[:, 0].astype(np.float32)
@@ -222,14 +341,18 @@ def main():
             speech_prob = vad_model(audio_tensor, SAMPLE_RATE).item()
 
         is_speech = speech_prob >= THRESHOLD
-
-        # Visual indicator (minimal)
-        if is_speech:
-            indicator = "█" * int(speech_prob * 10)
-        else:
-            indicator = "░"
         mode = "CMD" if activated else "HOT"
-        print(f"\r[{mode}] {indicator:<10} {speech_prob:.2f}  ", end="", file=sys.stderr)
+
+        # Visual indicator
+        if plot:
+            plot.add(speech_prob)
+            plot.draw(mode=mode, is_speech=is_speech)
+        else:
+            if is_speech:
+                indicator = "█" * int(speech_prob * 10)
+            else:
+                indicator = "░"
+            print(f"\r[{mode}] {indicator:<10} {speech_prob:.2f}  ", end="", file=sys.stderr)
 
         if is_speech:
             silence_chunks = 0
