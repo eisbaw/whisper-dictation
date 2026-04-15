@@ -1,0 +1,226 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.8.4 Safari/537.36" version="29.0.3">
+  <diagram id="whisper-dictation-overview" name="Architecture Overview">
+    <mxGraphModel dx="1426" dy="1981" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Whisper Dictation — Architecture Overview" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;fontColor=#333333;" parent="1" vertex="1">
+          <mxGeometry x="480" y="20" width="440" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="hw_group" value="Hardware / OS Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=13;verticalAlign=top;dashed=1;dashPattern=5 5;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="40" y="80" width="520" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="user" value="User" style="shape=mxgraph.basic.smiley;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="326" y="-12" width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="keyboard" value="Keyboard&#xa;/dev/input/event*" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="200" y="120" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="microphone" value="Microphone&#xa;(PipeWire / PulseAudio)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="390" y="120" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="active_window" value="Active Window&#xa;(any app)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="200" y="180" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_kb" style="rounded=1;strokeColor=#666666;" parent="1" source="user" target="keyboard" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_kb_label" value="Super+Period&#xa;(hold)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontColor=#666666;" parent="e_user_kb" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_mic" style="rounded=1;strokeColor=#666666;" parent="1" source="user" target="microphone" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_mic_label" value="speaks" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontColor=#666666;" parent="e_user_mic" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="app_group" value="Python Application (whisper-dictation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0de;strokeColor=#996185;fontStyle=1;fontSize=13;verticalAlign=top;dashed=1;dashPattern=5 5;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="40" y="280" width="1100" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="daemon" value="daemon.py&#xa;─────────────&#xa;Main Orchestrator&#xa;• evdev key monitoring&#xa;• hotkey detection&#xa;• virtual device filtering&#xa;• coordinates pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=4;" parent="1" vertex="1">
+          <mxGeometry x="60" y="310" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="recorder" value="recorder.py&#xa;─────────────&#xa;Audio Capture&#xa;• ffmpeg subprocess&#xa;• 16kHz mono WAV&#xa;• /tmp/whisper-dictation/&#xa;• SIGTERM on key release" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=4;" parent="1" vertex="1">
+          <mxGeometry x="280" y="310" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="transcriber" value="transcriber.py&#xa;─────────────&#xa;Speech-to-Text&#xa;• whisper-cli (C++)&#xa;• base model (~4-6s)&#xa;• 99+ languages&#xa;• filler word removal&#xa;• auto-capitalize" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=4;" parent="1" vertex="1">
+          <mxGeometry x="500" y="310" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="paste" value="paste.py&#xa;─────────────&#xa;Text Output&#xa;• ydotool type&#xa;• 300ms focus delay&#xa;• ydotoold check&#xa;• Wayland-native" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=4;" parent="1" vertex="1">
+          <mxGeometry x="720" y="310" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="config" value="config.py&#xa;─────────────&#xa;Configuration&#xa;• YAML parsing&#xa;• keycode mapping&#xa;• model path resolution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=4;" parent="1" vertex="1">
+          <mxGeometry x="940" y="310" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ui" value="ui.py&#xa;─────────────&#xa;Notifications&#xa;• notify-send&#xa;• status feedback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=4;" parent="1" vertex="1">
+          <mxGeometry x="940" y="410" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kb_daemon" style="rounded=1;strokeColor=#82b366;strokeWidth=2;" parent="1" source="keyboard" target="daemon" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kb_daemon_l" value="key events" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#82b366;" parent="e_kb_daemon" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_daemon_rec" style="rounded=1;strokeColor=#82b366;strokeWidth=2;" parent="1" source="daemon" target="recorder" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_daemon_rec_l" value="1. start/stop&#xa;recording" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#82b366;" parent="e_daemon_rec" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_mic_rec" style="rounded=1;strokeColor=#6c8ebf;strokeWidth=2;" parent="1" source="microphone" target="recorder" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_mic_rec_l" value="audio stream" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#6c8ebf;" parent="e_mic_rec" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rec_trans" style="rounded=1;strokeColor=#82b366;strokeWidth=2;" parent="1" source="recorder" target="transcriber" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rec_trans_l" value="2. WAV file" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#82b366;" parent="e_rec_trans" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_trans_paste" style="rounded=1;strokeColor=#82b366;strokeWidth=2;" parent="1" source="transcriber" target="paste" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_trans_paste_l" value="3. text string" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#82b366;" parent="e_trans_paste" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_paste_win" style="rounded=1;strokeColor=#996185;strokeWidth=2;" parent="1" source="paste" target="active_window" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_paste_win_l" value="4. ydotool type" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#996185;" parent="e_paste_win" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_cfg_daemon" style="rounded=1;strokeColor=#d6b656;dashed=1;" parent="1" source="config" target="daemon" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cfg_daemon_l" value="config" style="edgeLabel;html=1;align=center;fontSize=8;fontColor=#d6b656;" parent="e_cfg_daemon" vertex="1" connectable="0">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ext_group" value="External Tools (Nix-managed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=13;verticalAlign=top;dashed=1;dashPattern=5 5;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="40" y="540" width="1100" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="evdev" value="evdev&#xa;(kernel input)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="60" y="580" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ffmpeg" value="ffmpeg&#xa;(audio capture)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="220" y="580" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="whisper_cli" value="whisper-cli&#xa;(whisper.cpp C++)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="380" y="580" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ydotool" value="ydotool&#xa;(Wayland input)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="560" y="580" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="notify_send" value="notify-send&#xa;(libnotify)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="720" y="580" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="whisper_model" value="ggml-base.bin&#xa;(Whisper model)&#xa;~/.local/share/whisper-models/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="880" y="570" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e_d_evdev" style="rounded=1;strokeColor=#b85450;dashed=1;" parent="1" source="daemon" target="evdev" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_r_ffmpeg" style="rounded=1;strokeColor=#b85450;dashed=1;" parent="1" source="recorder" target="ffmpeg" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_t_whisper" style="rounded=1;strokeColor=#b85450;dashed=1;" parent="1" source="transcriber" target="whisper_cli" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p_ydotool" style="rounded=1;strokeColor=#b85450;dashed=1;" parent="1" source="paste" target="ydotool" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_u_notify" style="rounded=1;strokeColor=#b85450;dashed=1;" parent="1" source="ui" target="notify_send" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_t_model" style="rounded=1;strokeColor=#b85450;dashed=1;" parent="1" source="transcriber" target="whisper_model" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nix_group" value="NixOS Integration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=13;verticalAlign=top;dashed=1;dashPattern=5 5;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="40" y="700" width="1100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="nix_flake" value="flake.nix&#xa;(package def)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="60" y="740" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="nix_config" value="configuration.nix&#xa;programs.ydotool.enable&#xa;user groups: input, ydotool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="230" y="730" width="210" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="nix_systemd" value="systemd user service&#xa;whisper-dictation.service&#xa;(auto-start on graphical session)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="480" y="730" width="220" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="nix_devenv" value="devenv.nix&#xa;(dev shell + quality gates)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="740" y="740" width="170" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="nix_yaml" value="config.yaml&#xa;~/.config/whisper-dictation/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="950" y="740" width="170" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="1200" y="80" width="240" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" value="Legend" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=13;fontStyle=1;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1280" y="85" width="80" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="1215" y="115" width="20" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1t" value="Core Python modules" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1245" y="112" width="140" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="1215" y="140" width="20" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2t" value="Support modules" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1245" y="137" width="140" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="1215" y="165" width="20" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3t" value="Hardware / OS" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1245" y="162" width="140" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="1215" y="190" width="20" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4t" value="External tools (Nix)" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1245" y="187" width="140" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+          <mxGeometry x="1215" y="215" width="20" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5t" value="NixOS integration" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1245" y="212" width="140" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6t" value="── solid = data flow&#xa;- - dashed = uses/depends" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1215" y="240" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="flow_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="1200" y="310" width="240" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="flow_title" value="Pipeline Flow" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=13;fontStyle=1;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1265" y="315" width="110" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="flow_text" value="1. Hold Super+Period&#xa;2. Speak into mic&#xa;3. Release key&#xa;4. ffmpeg stops recording&#xa;5. whisper-cli transcribes&#xa;6. ydotool types text&#xa;7. Notification shown" style="text;html=1;align=left;fontSize=10;fillColor=none;strokeColor=none;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="1215" y="345" width="210" height="120" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

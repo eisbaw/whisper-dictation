@@ -8,7 +8,7 @@ Fast, accurate, privacy-first voice input powered by whisper.cpp. Press and hold
 
 - 🔒 **100% Local & Private** - No cloud, no telemetry, works offline
 - ⚡ **Real-time Feedback** - Live transcription with floating UI
-- 🎯 **Push-to-Talk** - Hold Super+Period, speak, release to paste
+- 🎯 **Push-to-Talk** - Hold hotkey, speak, release to paste (configurable in `~/.config/whisper-dictation/config.yaml`)
 - 🧠 **Technical Accuracy** - Optimized for developer/AI workflows
 - 🌍 **Multilingual** - Support for 99 languages via Whisper
 - 🎨 **Native GNOME** - GTK4 UI, Wayland-compatible
@@ -121,53 +121,34 @@ just run
 ### Using Dictation
 
 1. Click in any text field (browser, editor, terminal, etc.)
-2. Press and hold **Super+Period** (⊞ + .)
+2. Press and hold the configured hotkey (see Configuration below)
 3. Speak clearly in your chosen language
 4. Release key → text appears instantly!
 
-**Tips:**
-- Speak naturally, no need to pause between words
-- Works in any application (Wayland-compatible)
-- Auto-detect mode handles mixed Italian/English seamlessly
-- Use `just run-verbose` to troubleshoot hotkey detection
+The hotkey is configured in `~/.config/whisper-dictation/config.yaml` (see Configuration below).
 
 ## Configuration
 
-Edit `~/.config/whisper-dictation/config.yaml`:
+Edit `~/.config/whisper-dictation/config.yaml`. The file is created with defaults on first run.
+
+Example config:
 
 ```yaml
-# Hotkey configuration
 hotkey:
-  key: period           # Any key from evdev.ecodes (e.g., period, comma, space)
   modifiers:
-    - super             # Can use: super, ctrl, alt, shift
-
-# Whisper settings
+    - super
+  key: altgr
 whisper:
-  model: base           # Options: tiny (1-2s), base (4-6s), small (10-15s), medium (20-30s), large (40-60s)
-  language: auto        # Options: auto, en, it, es, fr, de, etc. (99+ languages supported)
-  threads: 4            # CPU threads for transcription (adjust based on your system)
-
-# UI settings
-ui:
-  show_waveform: false  # Show visual waveform during recording
-  theme: dark           # Options: dark, light, auto
-
-# Post-processing
-processing:
-  remove_filler_words: true   # Remove "um", "uh", etc.
-  auto_capitalize: true       # Capitalize first letter of sentences
-  auto_punctuate: false       # Auto-add punctuation (experimental)
+  model: base
+  language: en
 ```
 
-**Quick config changes:**
-```bash
-# Change language to auto-detect
-sed -i 's/language: .*/language: auto/' ~/.config/whisper-dictation/config.yaml
+Available options:
 
-# Change model to base (faster)
-sed -i 's/model: .*/model: base/' ~/.config/whisper-dictation/config.yaml
-```
+- **hotkey.modifiers**: `super`, `ctrl`, `alt`, `shift` (list, can combine multiple)
+- **hotkey.key**: `period`, `comma`, `space`, `slash`, `semicolon`, `altgr`, `f1`-`f12`
+- **whisper.model**: `tiny`, `base`, `small`, `medium`, `large` (bigger = slower + more accurate)
+- **whisper.language**: `en`, `it`, `auto`, etc. (99+ languages supported)
 
 ## How It Works
 
@@ -273,8 +254,8 @@ run-daemon-debug
 # Check for keybinding conflicts in GNOME
 gnome-control-center keyboard
 
-# Verify you see "HOTKEY COMBO DETECTED" when pressing Super+Period
-# If you see "has_mods=False", verify Super key is being detected
+# Verify you see "HOTKEY COMBO DETECTED" when pressing the configured hotkey
+# If you see "has_mods=False", verify modifier key is being detected
 ```
 
 ### Nix environment issues
