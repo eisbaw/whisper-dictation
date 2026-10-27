@@ -13,6 +13,13 @@ pkgs.mkShell {
     ffmpeg
     whisper-cpp         # whisper-cli for transcription
     libnotify           # notify-send for desktop notifications
+    # Routing the recognised command into an xterm running `claude` (the
+    # "hey claude" wake-word action in hotword_demo.py): xterm to spawn the
+    # window, xdotool to activate it, ydotool to type the text. ydotoold
+    # must already be running externally.
+    xterm
+    xdotool
+    ydotool
   ];
 
   shellHook = ''
