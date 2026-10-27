@@ -11,7 +11,7 @@ pkgs.mkShell {
     ]))
     portaudio
     ffmpeg
-    openai-whisper-cpp  # whisper-cli for transcription
+    whisper-cpp         # whisper-cli for transcription
     libnotify           # notify-send for desktop notifications
   ];
 
