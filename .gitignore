@@ -49,3 +49,6 @@ htmlcov/
 
 # Config (allow template)
 .config/whisper-dictation/config.yaml
+
+# draw.io backups
+.$*.bkp

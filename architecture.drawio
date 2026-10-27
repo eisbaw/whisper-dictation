@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.8.4 Safari/537.36" version="29.0.3">
   <diagram id="whisper-dictation-overview" name="Architecture Overview">
-    <mxGraphModel dx="1426" dy="1981" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+    <mxGraphModel dx="1570" dy="1846" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -39,7 +39,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="app_group" value="Python Application (whisper-dictation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0de;strokeColor=#996185;fontStyle=1;fontSize=13;verticalAlign=top;dashed=1;dashPattern=5 5;arcSize=8;" parent="1" vertex="1">
-          <mxGeometry x="40" y="280" width="1100" height="220" as="geometry" />
+          <mxGeometry x="40" y="270" width="1100" height="230" as="geometry" />
         </mxCell>
         <mxCell id="daemon" value="daemon.py&#xa;─────────────&#xa;Main Orchestrator&#xa;• evdev key monitoring&#xa;• hotkey detection&#xa;• virtual device filtering&#xa;• coordinates pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=4;" parent="1" vertex="1">
           <mxGeometry x="60" y="310" width="180" height="120" as="geometry" />
