@@ -6,6 +6,7 @@ Monitors keyboard for push-to-talk hotkey and coordinates transcription
 
 import argparse
 import logging
+import selectors
 import signal
 import sys
 from pathlib import Path
@@ -31,9 +32,14 @@ class DictationDaemon:
         self.ui = DictationUI(self.config)
         self.paster = TextPaster(self.config)
 
-        self.keys_pressed = set()
+        # Every keyboard is read, each with its own key state, so a hotkey
+        # chord must come from one device. Keyed by /dev/input path.
+        self.devices = {}
+        self.keys_pressed = {}
+        self.not_keyboards = set()
         self.is_recording = False
-        self.keyboard_device = None
+        self.recording_device = None
+        self.selector = selectors.DefaultSelector()
 
     def _is_virtual_device(self, device_name):
         """Check if device name matches virtual device patterns"""
@@ -62,53 +68,55 @@ class DictationDaemon:
         )
         return has_letters, has_modifiers
 
-    def _select_best_keyboard(self, candidates):
-        """Select the best keyboard from candidates"""
-        if not candidates:
+    def _probe(self, device_path):
+        """Open device_path if it is a keyboard; None if not (yet) usable"""
+        try:
+            device = InputDevice(device_path)
+        except (OSError, PermissionError) as e:
+            # Not cached: a fresh node may not have its udev permissions yet
+            logger.debug(f"Cannot access {device_path}: {e}")
             return None
-        # Prefer keyboards with "keyboard" in the name
-        for device, path in candidates:
-            if "keyboard" in device.name.lower():
-                logger.info(f"Selected keyboard: {device.name} at {path}")
-                return device
-        # Otherwise return the first candidate
-        device, path = candidates[0]
-        logger.info(f"Selected first candidate: {device.name} at {path}")
+
+        has_letters, has_modifiers = self._has_required_keys(device.capabilities())
+        reason = None
+        if not has_letters:
+            reason = "no letter keys"
+        elif not has_modifiers:
+            reason = "no modifier keys"
+        elif self._is_virtual_device(device.name):
+            reason = "virtual device"
+        if reason:
+            logger.debug(f"Skip {device.name} at {device_path}: {reason}")
+            self.not_keyboards.add(device_path)
+            device.close()
+            return None
         return device
 
-    def find_keyboard_device(self):
-        """Find the main keyboard device that supports our hotkey"""
-        candidates = []
+    def scan_keyboards(self):
+        """Start reading keyboards that appeared since the last scan"""
+        present = set(list_devices())
+        # Event node numbers are reused, so forget nodes that went away
+        self.not_keyboards &= present
+        for device_path in sorted(present - self.devices.keys() - self.not_keyboards):
+            device = self._probe(device_path)
+            if device:
+                logger.info(f"Monitoring keyboard: {device.name} at {device_path}")
+                self.devices[device_path] = device
+                self.keys_pressed[device_path] = set()
+                self.selector.register(device, selectors.EVENT_READ, device_path)
 
-        for device_path in list_devices():
-            try:
-                device = InputDevice(device_path)
-                has_letters, has_modifiers = self._has_required_keys(device.capabilities())
-
-                if not has_letters:
-                    logger.debug(f"Skip {device.name}: no letter keys")
-                    continue
-
-                if not has_modifiers:
-                    logger.debug(f"Skip {device.name}: no modifier keys")
-                    continue
-
-                if self._is_virtual_device(device.name):
-                    logger.info(f"Skip virtual device: {device.name} at {device_path}")
-                    continue
-
-                logger.info(f"Candidate keyboard: {device.name} at {device_path}")
-                candidates.append((device, device_path))
-
-            except (OSError, PermissionError) as e:
-                logger.debug(f"Cannot access {device_path}: {e}")
-                continue
-
-        if not candidates:
-            logger.error("No suitable keyboard devices found!")
-            return None
-
-        return self._select_best_keyboard(candidates)
+    def _drop_keyboard(self, device_path):
+        """Stop reading a keyboard that was unplugged"""
+        device = self.devices.pop(device_path)
+        self.keys_pressed.pop(device_path)
+        self.selector.unregister(device)
+        try:
+            device.close()
+        except OSError:
+            pass
+        logger.info(f"Keyboard gone: {device.name} at {device_path}")
+        if self.is_recording and self.recording_device == device_path:
+            self.stop_recording_and_transcribe()
 
     def start_recording(self):
         """Start audio recording"""
@@ -162,14 +170,14 @@ class DictationDaemon:
             audio_file, on_complete=on_transcription_complete, on_error=on_transcription_error
         )
 
-    def _track_key_state(self, event):
+    def _track_key_state(self, event, pressed):
         """Track pressed/released keys"""
         if event.value == 1:  # Key down
-            self.keys_pressed.add(event.code)
-            logger.debug(f"Key DOWN: {event.code} | Currently pressed: {self.keys_pressed}")
+            pressed.add(event.code)
+            logger.debug(f"Key DOWN: {event.code} | Currently pressed: {pressed}")
         elif event.value == 0:  # Key up
-            self.keys_pressed.discard(event.code)
-            logger.debug(f"Key UP: {event.code} | Currently pressed: {self.keys_pressed}")
+            pressed.discard(event.code)
+            logger.debug(f"Key UP: {event.code} | Currently pressed: {pressed}")
 
     def _log_hotkey_debug(self, event, hotkey_key, hotkey_modifiers, has_modifiers, hotkey_pressed):
         """Log hotkey matching for debugging"""
@@ -180,21 +188,22 @@ class DictationDaemon:
                 f"has_mods={has_modifiers}, is_hotkey={hotkey_pressed}"
             )
 
-    def on_key_event(self, event):
-        """Handle keyboard events"""
+    def on_key_event(self, event, device_path):
+        """Handle keyboard events from the keyboard at device_path"""
         if event.type != ecodes.EV_KEY:
             return
 
         # Track key state
-        self._track_key_state(event)
+        pressed = self.keys_pressed[device_path]
+        self._track_key_state(event, pressed)
 
         # Get configured hotkey
         hotkey_modifiers = self.config.get_hotkey_modifiers()
         hotkey_key = self.config.get_hotkey_key()
 
         # Check if ANY of the modifier keys are pressed (e.g., left OR right Super)
-        has_modifiers = any(mod in self.keys_pressed for mod in hotkey_modifiers)
-        hotkey_pressed = hotkey_key in self.keys_pressed
+        has_modifiers = any(mod in pressed for mod in hotkey_modifiers)
+        hotkey_pressed = hotkey_key in pressed
 
         # Log for debugging
         self._log_hotkey_debug(event, hotkey_key, hotkey_modifiers, has_modifiers, hotkey_pressed)
@@ -207,10 +216,16 @@ class DictationDaemon:
             and not self.is_recording
         ):
             logger.info("🎤 HOTKEY COMBO DETECTED - Starting recording!")
+            self.recording_device = device_path
             self.start_recording()
 
         # Handle hotkey release
-        if event.code == hotkey_key and event.value == 0 and self.is_recording:
+        if (
+            event.code == hotkey_key
+            and event.value == 0
+            and self.is_recording
+            and device_path == self.recording_device
+        ):
             logger.info("🛑 HOTKEY RELEASED - Stopping recording!")
             self.stop_recording_and_transcribe()
 
@@ -218,9 +233,8 @@ class DictationDaemon:
         """Main daemon loop"""
         logger.info("Starting Whisper Dictation daemon...")
 
-        # Find keyboard
-        self.keyboard_device = self.find_keyboard_device()
-        if not self.keyboard_device:
+        self.scan_keyboards()
+        if not self.devices:
             logger.error("Could not find keyboard device")
             logger.error("Make sure you're in the 'input' group: sudo usermod -aG input $USER")
             sys.exit(1)
@@ -236,7 +250,6 @@ class DictationDaemon:
         signal.signal(signal.SIGINT, cleanup)
         signal.signal(signal.SIGTERM, cleanup)
 
-        logger.info(f"Monitoring keyboard: {self.keyboard_device.name}")
         logger.info(f"Press {self.config.get_hotkey_display()} to start dictation")
 
         # Initialize UI
@@ -244,8 +257,20 @@ class DictationDaemon:
 
         # Event loop
         try:
-            for event in self.keyboard_device.read_loop():
-                self.on_key_event(event)
+            while True:
+                # The timeout doubles as the hotplug poll for new keyboards
+                for key, _ in self.selector.select(timeout=2.0):
+                    device_path = key.data
+                    try:
+                        events = list(key.fileobj.read())
+                    except BlockingIOError:
+                        continue
+                    except OSError:
+                        self._drop_keyboard(device_path)
+                        continue
+                    for event in events:
+                        self.on_key_event(event, device_path)
+                self.scan_keyboards()
         except KeyboardInterrupt:
             cleanup(None, None)
         except Exception as e:
